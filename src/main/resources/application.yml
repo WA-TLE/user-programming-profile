@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: user-programming-profile
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/test
+    username: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+  config:
+    import: "file:src/main/resources/application-secrets.yml"
+
+server:
+  port: 8080
