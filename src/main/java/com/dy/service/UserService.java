@@ -2,6 +2,9 @@ package com.dy.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.dy.domain.User;
+import com.dy.entry.UserRegister;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
 * @author dy
@@ -12,10 +15,19 @@ public interface UserService extends IService<User> {
     /**
      * 用户注册功能
      *
+     * @param register@return
+     */
+    Long userRegister(UserRegister register);
+
+
+    /**
+     * 用户登录
+     *
      * @param userAccount
      * @param password
-     * @param checkPassword
      * @return
      */
-    Long userRegister(String userAccount, String password, String checkPassword);
+    User userLogin(String userAccount, String password, HttpServletRequest request);
+
+
 }
