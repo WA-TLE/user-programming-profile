@@ -13,11 +13,12 @@ import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.dy.utils.Constants.SALT;
-import static com.dy.utils.Constants.VALID_PATTERN;
+import static com.dy.utils.Constants.*;
 
 /**
  * @author dy
@@ -148,6 +149,48 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
 
         //  3. 用户信息脱敏
+        User secureUser = getSecureUser(originUser);
+
+        //  4. 记录用户登录状态
+        request.getSession().setAttribute(USER_LOGIN_STATUS, secureUser);
+
+        //  5. 返回脱敏后的用户信息
+        return secureUser;
+    }
+
+
+
+    /**
+     * 根据用户名查询用户
+     *
+     * @param username
+     * @param request
+     * @return
+     */
+    public List<User> searchUserByName(String username, HttpServletRequest request) {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.like("user_name", username);
+
+        List<User> userList = this.list(queryWrapper);
+        ArrayList<User> secureUserList = new ArrayList<>(userList.size());
+
+        for (User user : userList) {
+            User secureUser =  getSecureUser(user);
+            secureUserList.add(secureUser);
+        }
+
+        return secureUserList;
+
+
+    }
+
+    /**
+     * 用户信息脱敏
+     *
+     * @param originUser
+     * @return
+     */
+    private static User getSecureUser(User originUser) {
         User secureUser = new User();
         secureUser.setId(originUser.getId());
         secureUser.setUserName(originUser.getUserName());
@@ -159,11 +202,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         secureUser.setUserRole(originUser.getUserRole());    //  把用户的权限也返回给前端
         secureUser.setUserStatus(originUser.getUserStatus());
         secureUser.setCreateTime(originUser.getCreateTime());
-
-        //  4. 记录用户登录状态
-        request.getSession().setAttribute("userStatus", secureUser);
-
-        //  5. 返回脱敏后的用户信息
         return secureUser;
     }
 

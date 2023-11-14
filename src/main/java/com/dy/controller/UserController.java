@@ -1,5 +1,6 @@
 package com.dy.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.dy.domain.User;
 import com.dy.entry.UserLogin;
 import com.dy.entry.UserRegister;
@@ -7,13 +8,16 @@ import com.dy.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import static com.dy.utils.Constants.ADMIN_ROLE;
+import static com.dy.utils.Constants.USER_LOGIN_STATUS;
 
 /**
  * @Author: dy
@@ -28,6 +32,12 @@ public class UserController {
     @Resource
     private UserService userService;
 
+    /**
+     * 用户注册
+     *
+     * @param register
+     * @return
+     */
     @PostMapping("/register")
     public Long userRegister(@RequestBody UserRegister register) {
         //  controller 层也要有必要的校验
@@ -46,6 +56,13 @@ public class UserController {
     }
 
 
+    /**
+     * 用户登录
+     *
+     * @param userLogin
+     * @param request
+     * @return
+     */
     @PostMapping("/login")
     public User userLogin(@RequestBody UserLogin userLogin, HttpServletRequest request) {
 
@@ -63,5 +80,45 @@ public class UserController {
         return userService.userLogin(userLogin.getUserAccount(), userLogin.getUserPassword(), request);
     }
 
+    /**
+     * 根据用户名模糊查询用户
+     *
+     * @param username
+     * @return
+     */
+    @GetMapping("/search")
+    public List<User> searchUserByName(String username, HttpServletRequest request) {
+
+        //  仅管理员可以查询
+        if (!isAdmin(request)) {
+            return new ArrayList<>();
+        }
+
+        return userService.searchUserByName(username, request);
+
+    }
+
+
+
+    /**
+     * 根据用户 id 删除用户
+     *
+     * @param id
+     * @return
+     */
+    @PutMapping("delete")
+    public Boolean removeUserById(Long id, HttpServletRequest request) {
+        //  仅管理员可以查询
+        if (!isAdmin(request)) {
+            return false;
+        }
+        return userService.removeById(id);
+    }
+
+    private static Boolean isAdmin(HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute(USER_LOGIN_STATUS);
+
+        return user != null && Objects.equals(user.getUserRole(), ADMIN_ROLE);
+    }
 
 }

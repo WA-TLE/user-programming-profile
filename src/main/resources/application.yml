@@ -11,6 +11,9 @@ spring:
 
 server:
   port: 8080
+  reactive:
+    session:
+      timeout: 86400
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
