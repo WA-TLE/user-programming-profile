@@ -39,4 +39,12 @@ public interface UserService extends IService<User> {
      * @return
      */
     List<User> searchUserByName(String username, HttpServletRequest request);
+
+    /**
+     * 获取当前用户
+     *
+     * @param request
+     * @return
+     */
+    User getCurrentUser(HttpServletRequest request);
 }

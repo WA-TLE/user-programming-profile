@@ -184,6 +184,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     }
 
+    @Override
+    public User getCurrentUser(HttpServletRequest request) {
+        //  从 session 中获取当前登录用户的信息
+        User user = (User) request.getSession().getAttribute(USER_LOGIN_STATUS);
+
+        //  如果当前用户为登录呢?
+        if (user == null) {
+            return null;
+        }
+
+        //  根据用户 id, 从数据中查询最新信息
+        Long userId = user.getId();
+
+        User currentUser = userMapper.selectById(userId);
+
+        //  用户信息脱敏 返回
+        return getSecureUser(currentUser);
+    }
+
     /**
      * 用户信息脱敏
      *
@@ -191,6 +210,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return
      */
     private static User getSecureUser(User originUser) {
+        //  如果这里传进来的用户为 null 呢??
+        if (originUser == null) {
+            return null;
+        }
+
+
         User secureUser = new User();
         secureUser.setId(originUser.getId());
         secureUser.setUserName(originUser.getUserName());
