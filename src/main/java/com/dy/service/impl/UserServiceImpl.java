@@ -204,6 +204,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     /**
+     * 用户注销功能
+     *
+     * @param request
+     * @return
+     */
+    public Integer userLogout(HttpServletRequest request) {
+        request.getSession().removeAttribute(USER_LOGIN_STATUS);
+        return 1;
+    }
+
+    /**
      * 用户信息脱敏
      *
      * @param originUser

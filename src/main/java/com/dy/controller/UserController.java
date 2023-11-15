@@ -75,7 +75,7 @@ public class UserController {
             return null;
         }
 
-        log.info("用户登录~ {}" ,userLogin);
+        log.info("用户登录~ {}", userLogin);
 
         if (StringUtils.isAnyBlank(
                 userLogin.getUserAccount(),
@@ -85,6 +85,23 @@ public class UserController {
 
 
         return userService.userLogin(userLogin.getUserAccount(), userLogin.getUserPassword(), request);
+    }
+
+    /**
+     * 用户注销功能
+     *
+     * @param request
+     * @return
+     */
+    @PostMapping("/logout")
+    public Integer userLogout(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+
+        log.info("用户注销: {}", request);
+
+        return userService.userLogout(request);
     }
 
     /**
@@ -105,7 +122,6 @@ public class UserController {
         return userService.searchUserByName(username, request);
 
     }
-
 
 
     /**
@@ -138,7 +154,6 @@ public class UserController {
         log.info("获取当前用户: {}", request);
         return userService.getCurrentUser(request);
     }
-
 
 
     private static Boolean isAdmin(HttpServletRequest request) {
