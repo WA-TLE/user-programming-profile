@@ -42,10 +42,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String userAccount = register.getUserAccount();
         String password = register.getUserPassword();
         String checkPassword = register.getCheckPassword();
+        String planetCode = register.getPlanetCode();
 
         //  1. 校验
         //  1.1 非空校验
-        if (StringUtils.isAnyBlank(userAccount, password, checkPassword)) {
+        if (StringUtils.isAnyBlank(userAccount, password, checkPassword, planetCode)) {
             return -1L;
         }
 
@@ -56,6 +57,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         //  1.3 密码长度校验
         if (password.length() < 8) {
             return -3L;
+        }
+
+        //  星球编号长度校验
+        if (planetCode.length() > 6) {
+            return -11L;
         }
 
         //  1.4 账户不包含特殊字符
@@ -85,6 +91,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             return -6L;
         }
 
+        //  1.7 判断星球编号是否重复
+        queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("planet_code", planetCode);
+        Long countPlanet = userMapper.selectCount(queryWrapper);
+        if (countPlanet > 0) {
+            return -7L;
+        }
+
+
         //  2. 对用户密码进行加密
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + password).getBytes());
 
@@ -97,7 +112,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         int isSuccess = userMapper.insert(user);
 
         if (isSuccess <= 0) {
-            return -7L;
+            return -8L;
         }
 
 
@@ -159,7 +174,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
 
-
     /**
      * 根据用户名查询用户
      *
@@ -175,7 +189,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         ArrayList<User> secureUserList = new ArrayList<>(userList.size());
 
         for (User user : userList) {
-            User secureUser =  getSecureUser(user);
+            User secureUser = getSecureUser(user);
             secureUserList.add(secureUser);
         }
 
@@ -238,6 +252,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         secureUser.setUserRole(originUser.getUserRole());    //  把用户的权限也返回给前端
         secureUser.setUserStatus(originUser.getUserStatus());
         secureUser.setCreateTime(originUser.getCreateTime());
+        secureUser.setPlanetCode(originUser.getPlanetCode());
         return secureUser;
     }
 

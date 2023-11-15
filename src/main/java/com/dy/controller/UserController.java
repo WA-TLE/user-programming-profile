@@ -51,7 +51,8 @@ public class UserController {
         if (StringUtils.isAnyBlank(
                 register.getUserAccount(),
                 register.getUserPassword(),
-                register.getCheckPassword())) {
+                register.getCheckPassword(),
+                register.getPlanetCode())){
             return null;
         }
 
