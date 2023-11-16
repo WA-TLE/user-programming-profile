@@ -2,8 +2,12 @@ package com.dy.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.dy.common.BaseResponse;
+import com.dy.common.ErrorCode;
+import com.dy.common.Result;
 import com.dy.domain.User;
 import com.dy.entry.UserRegister;
+import com.dy.exception.BusinessException;
 import com.dy.mapper.UserMapper;
 import com.dy.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +42,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      *
      * @param register@return
      */
-    public Long userRegister(UserRegister register) {
+    public BaseResponse userRegister(UserRegister register) {
         String userAccount = register.getUserAccount();
         String password = register.getUserPassword();
         String checkPassword = register.getCheckPassword();
@@ -47,21 +51,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         //  1. 校验
         //  1.1 非空校验
         if (StringUtils.isAnyBlank(userAccount, password, checkPassword, planetCode)) {
-            return -1L;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         //  1.2 账号长度校验
         if (userAccount.length() < 4) {
-            return -2L;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         //  1.3 密码长度校验
         if (password.length() < 8) {
-            return -3L;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         //  星球编号长度校验
         if (planetCode.length() > 6) {
-            return -11L;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         //  1.4 账户不包含特殊字符
@@ -75,12 +79,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
          */
         Matcher matcher = Pattern.compile(VALID_PATTERN).matcher(userAccount);
         if (matcher.find()) {
-            return -4L;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         //  1.5 密码和校验密码相同
         if (!password.equals(checkPassword)) {
-            return -5L;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         //  1.6 判断用户名是否重复
@@ -88,7 +92,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         queryWrapper.eq("user_account", userAccount);
         Long count = userMapper.selectCount(queryWrapper);
         if (count > 0) {
-            return -6L;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         //  1.7 判断星球编号是否重复
@@ -96,7 +100,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         queryWrapper.eq("planet_code", planetCode);
         Long countPlanet = userMapper.selectCount(queryWrapper);
         if (countPlanet > 0) {
-            return -7L;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
 
@@ -106,17 +110,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User user = User.builder()
                 .userAccount(userAccount)
                 .userPassword(encryptPassword)
+                .planetCode(planetCode)
                 .build();
 
 
         int isSuccess = userMapper.insert(user);
 
         if (isSuccess <= 0) {
-            return -8L;
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
 
 
-        return 1L;
+        return Result.success();
     }
 
 
@@ -127,26 +132,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @param password
      * @return
      */
-    public User userLogin(String userAccount, String password, HttpServletRequest request) {
+    public BaseResponse<User> userLogin(String userAccount, String password, HttpServletRequest request) {
         //  1. 校验
         //  1.1 非空校验
         if (StringUtils.isAnyBlank(userAccount, password)) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         //  1.2 账号长度校验
         if (userAccount.length() < 4) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         //  1.3 密码长度校验
         if (password.length() < 8) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         //  1.4 用户名特殊字符校验
         Matcher matcher = Pattern.compile(VALID_PATTERN).matcher(userAccount);
         if (matcher.find()) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         //  2.1 判断密码是否正确
@@ -160,7 +165,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User originUser = userMapper.selectOne(userQueryWrapper);
 
         if (originUser == null) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         //  3. 用户信息脱敏
@@ -170,7 +175,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         request.getSession().setAttribute(USER_LOGIN_STATUS, secureUser);
 
         //  5. 返回脱敏后的用户信息
-        return secureUser;
+        return Result.success(secureUser);
     }
 
 
@@ -181,9 +186,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @param request
      * @return
      */
-    public List<User> searchUserByName(String username, HttpServletRequest request) {
+    public BaseResponse<List<User>> searchUserByName(String username, HttpServletRequest request) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.like("user_name", username);
+
+
+        //  如果这里没有传入参数呢???
+        if (StringUtils.isNotBlank(username)) {
+            queryWrapper.like("user_name", username);
+        }
 
         List<User> userList = this.list(queryWrapper);
         ArrayList<User> secureUserList = new ArrayList<>(userList.size());
@@ -193,19 +203,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             secureUserList.add(secureUser);
         }
 
-        return secureUserList;
+        return Result.success(secureUserList);
 
 
     }
 
     @Override
-    public User getCurrentUser(HttpServletRequest request) {
+    public BaseResponse<User> getCurrentUser(HttpServletRequest request) {
         //  从 session 中获取当前登录用户的信息
         User user = (User) request.getSession().getAttribute(USER_LOGIN_STATUS);
 
-        //  如果当前用户为登录呢?
+        //  如果当前用户未登录呢?
         if (user == null) {
-            return null;
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
 
         //  根据用户 id, 从数据中查询最新信息
@@ -214,7 +224,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User currentUser = userMapper.selectById(userId);
 
         //  用户信息脱敏 返回
-        return getSecureUser(currentUser);
+        User secureUser = getSecureUser(currentUser);
+        return Result.success(secureUser);
     }
 
     /**
@@ -223,9 +234,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @param request
      * @return
      */
-    public Integer userLogout(HttpServletRequest request) {
+    public BaseResponse userLogout(HttpServletRequest request) {
         request.getSession().removeAttribute(USER_LOGIN_STATUS);
-        return 1;
+
+        return Result.success(1L);
     }
 
     /**
@@ -237,13 +249,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     private static User getSecureUser(User originUser) {
         //  如果这里传进来的用户为 null 呢??
         if (originUser == null) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
 
         User secureUser = new User();
         secureUser.setId(originUser.getId());
-        secureUser.setUserName(originUser.getUserName());
+        secureUser.setUsername(originUser.getUsername());
         secureUser.setUserAccount(originUser.getUserAccount());
         secureUser.setAvatarUrl(originUser.getAvatarUrl());
         secureUser.setGender(originUser.getGender());

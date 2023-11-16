@@ -1,6 +1,7 @@
 package com.dy.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.dy.common.BaseResponse;
 import com.dy.domain.User;
 import com.dy.entry.UserRegister;
 
@@ -8,17 +9,17 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
-* @author dy
-* @description 针对表【user(用户表)】的数据库操作Service
-* @createDate 2023-11-12 21:02:54
-*/
+ * @author dy
+ * @description 针对表【user(用户表)】的数据库操作Service
+ * @createDate 2023-11-12 21:02:54
+ */
 public interface UserService extends IService<User> {
     /**
      * 用户注册功能
      *
      * @param register@return
      */
-    Long userRegister(UserRegister register);
+    BaseResponse<Long> userRegister(UserRegister register);
 
 
     /**
@@ -28,7 +29,7 @@ public interface UserService extends IService<User> {
      * @param password
      * @return
      */
-    User userLogin(String userAccount, String password, HttpServletRequest request);
+    BaseResponse<User> userLogin(String userAccount, String password, HttpServletRequest request);
 
 
     /**
@@ -38,7 +39,7 @@ public interface UserService extends IService<User> {
      * @param request
      * @return
      */
-    List<User> searchUserByName(String username, HttpServletRequest request);
+    BaseResponse<List<User>> searchUserByName(String username, HttpServletRequest request);
 
     /**
      * 获取当前用户
@@ -46,7 +47,7 @@ public interface UserService extends IService<User> {
      * @param request
      * @return
      */
-    User getCurrentUser(HttpServletRequest request);
+    BaseResponse<User> getCurrentUser(HttpServletRequest request);
 
 
     /**
@@ -55,8 +56,7 @@ public interface UserService extends IService<User> {
      * @param request
      * @return
      */
-    Integer userLogout(HttpServletRequest request);
-
+    BaseResponse userLogout(HttpServletRequest request);
 
 
 }

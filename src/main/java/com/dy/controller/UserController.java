@@ -1,19 +1,19 @@
 package com.dy.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.dy.common.BaseResponse;
+import com.dy.common.ErrorCode;
+import com.dy.common.Result;
 import com.dy.domain.User;
 import com.dy.entry.UserLogin;
 import com.dy.entry.UserRegister;
+import com.dy.exception.BusinessException;
 import com.dy.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.jws.soap.SOAPBinding;
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -40,10 +40,10 @@ public class UserController {
      * @return
      */
     @PostMapping("/register")
-    public Long userRegister(@RequestBody UserRegister register) {
+    public BaseResponse<Long> userRegister(@RequestBody UserRegister register) {
         //  controller 层也要有必要的校验
         if (register == null) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         log.info("用户注册: {}", register);
@@ -53,7 +53,7 @@ public class UserController {
                 register.getUserPassword(),
                 register.getCheckPassword(),
                 register.getPlanetCode())){
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
 
@@ -69,11 +69,11 @@ public class UserController {
      * @return
      */
     @PostMapping("/login")
-    public User userLogin(@RequestBody UserLogin userLogin, HttpServletRequest request) {
+    public BaseResponse<User> userLogin(@RequestBody UserLogin userLogin, HttpServletRequest request) {
 
         //  controller 层也要有必要的校验
         if (userLogin == null) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         log.info("用户登录~ {}", userLogin);
@@ -81,7 +81,7 @@ public class UserController {
         if (StringUtils.isAnyBlank(
                 userLogin.getUserAccount(),
                 userLogin.getUserPassword())) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
 
@@ -95,9 +95,9 @@ public class UserController {
      * @return
      */
     @PostMapping("/logout")
-    public Integer userLogout(HttpServletRequest request) {
+    public BaseResponse userLogout(HttpServletRequest request) {
         if (request == null) {
-            return null;
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
         log.info("用户注销: {}", request);
@@ -112,11 +112,12 @@ public class UserController {
      * @return
      */
     @GetMapping("/search")
-    public List<User> searchUserByName(String username, HttpServletRequest request) {
+    public BaseResponse<List<User>> searchUserByName(String username, HttpServletRequest request) {
 
         //  仅管理员可以查询
+        // TODO: 2023/11/16 这里的 username 永远为 null
         if (!isAdmin(request)) {
-            return new ArrayList<>();
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
         log.info("根据用户名模糊查询用户: {}", username);
 
@@ -132,15 +133,16 @@ public class UserController {
      * @return
      */
     @PutMapping("delete")
-    public Boolean removeUserById(Long id, HttpServletRequest request) {
+    public BaseResponse<Boolean> removeUserById(Long id, HttpServletRequest request) {
         //  仅管理员可以查询
         if (!isAdmin(request)) {
-            return false;
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
 
         log.info("根据 id 删除用户: {}", id);
+        boolean flag = userService.removeById(id);
 
-        return userService.removeById(id);
+        return Result.success(flag);
     }
 
 
@@ -151,7 +153,7 @@ public class UserController {
      * @return
      */
     @GetMapping("/current")
-    public User getCurrentUser(HttpServletRequest request) {
+    public BaseResponse<User> getCurrentUser(HttpServletRequest request) {
         log.info("获取当前用户: {}", request);
         return userService.getCurrentUser(request);
     }
